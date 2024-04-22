@@ -106,17 +106,31 @@ namespace ngcomp
   // denotes the type of an equation
   enum class EqType
   {
+    // for the first order acoustic wave equation
     fowave,
+
+    // for the quasi-Trefftz space related to fowave
     foqtwave,
+
+    // for the second order acoustic wave equation
     wave,
+
+    // for the quasi-Trefftz space related to wave
     qtwave,
     fowave_reduced,
     heat,
     qtheat,
+
+    // for Laplace equation
     laplace,
     qtelliptic,
+
+    // planewaves for the helmholtz equation
     helmholtz,
+    // complex conjungate of helmholtz
     helmholtzconj,
+
+    // fallback for any other, at the moment unknown, type
     unknown
   };
 
