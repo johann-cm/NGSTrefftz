@@ -180,6 +180,10 @@ namespace ngcomp
       center *= (1.0 / vertices_index.Size ()) * useshift;
       return center;
     }
+
+  private:
+    // updates basis and basismat, given the constant dimension D
+    template <int D> void UpdateBasisConstDim ();
   };
 
   //////////////////////////// Trefftz basis ////////////////////////////

@@ -1,4 +1,5 @@
 #include <comp.hpp> // provides FESpace, ...
+#include <core/exception.hpp>
 #include <python_comp.hpp>
 #include <string>
 
@@ -53,28 +54,42 @@ namespace ngcomp
     eqtyp = flags.GetStringFlag ("eq");
     eqtype = stringToEqTye (eqtyp);
 
-    if (eqtyp == "fowave" || eqtyp == "foqtwave")
-      local_ndof = (D)*BinCoeff (D - 1 + order, D - 1);
-    else if (eqtyp == "wave" || eqtyp == "fowave_reduced")
-      local_ndof = BinCoeff (D - 1 + order, order)
-                   + BinCoeff (D - 1 + order - 1, order - 1)
-                   - (eqtyp == "fowave_reduced");
-    else if (eqtyp == "heat")
-      local_ndof = BinCoeff (D - 1 + order, order);
-    else if (eqtyp == "qtheat")
-      local_ndof = BinCoeff (D - 1 + order, order)
-                   + BinCoeff (D - 1 + order - 1, order - 1);
-    else if (eqtyp == "laplace")
-      local_ndof = BinCoeff (D - 1 + order, order)
-                   + BinCoeff (D - 1 + order - 1, order - 1);
-    else if (eqtyp == "qtelliptic")
-      local_ndof = BinCoeff (D - 1 + order, order)
-                   + BinCoeff (D - 1 + order - 1, order - 1);
-    else if (eqtyp == "helmholtz" || eqtyp == "helmholtzconj")
-      local_ndof = 2 * order + 1;
-    else
-      local_ndof = BinCoeff (D - 1 + order, order)
-                   + BinCoeff (D - 1 + order - 1, order - 1);
+    switch (eqtype)
+      {
+      case EqType::fowave:
+      case EqType::foqtwave:
+        local_ndof = (D)*BinCoeff (D - 1 + order, D - 1);
+        break;
+      case EqType::wave:
+      case EqType::fowave_reduced:
+        local_ndof = BinCoeff (D - 1 + order, order)
+                     + BinCoeff (D - 1 + order - 1, order - 1)
+                     - (eqtyp == "fowave_reduced");
+        break;
+      case EqType::heat:
+        local_ndof = BinCoeff (D - 1 + order, order);
+        break;
+      case EqType::qtheat:
+        local_ndof = BinCoeff (D - 1 + order, order)
+                     + BinCoeff (D - 1 + order - 1, order - 1);
+        break;
+      case EqType::laplace:
+        local_ndof = BinCoeff (D - 1 + order, order)
+                     + BinCoeff (D - 1 + order - 1, order - 1);
+        break;
+      case EqType::qtelliptic:
+        local_ndof = BinCoeff (D - 1 + order, order)
+                     + BinCoeff (D - 1 + order - 1, order - 1);
+        break;
+      case EqType::helmholtz:
+      case EqType::helmholtzconj:
+        local_ndof = 2 * order + 1;
+        break;
+
+      default:
+        local_ndof = BinCoeff (D - 1 + order, order)
+                     + BinCoeff (D - 1 + order - 1, order - 1);
+      }
 
     nel = ma->GetNE ();
     ndof = local_ndof * nel;
@@ -148,82 +163,55 @@ namespace ngcomp
     UpdateBasis ();
   }
 
+  template <int D> void TrefftzFESpace ::UpdateBasisConstDim ()
+  {
+    if (eqtyp == "laplace")
+      basismat = TLapBasis<D>::Basis (order, basistype);
+    else if (eqtyp == "qtelliptic")
+      {
+        basis = new QTEllipticBasis<D> (order, coeffA, coeffB, coeffC);
+      }
+    else if (eqtyp == "fowave" || eqtyp == "foqtwave")
+      {
+        basismats.SetSize (D);
+        for (int d = 0; d < D; d++)
+          basismats[d] = FOTWaveBasis<2>::Basis (order, d);
+        basis = new FOQTWaveBasis<2> (order, coeffA, coeffB);
+      }
+    else if (eqtyp == "heat")
+      {
+        basismat = THeatBasis<D>::Basis (order, 0, 0);
+      }
+    else if (eqtyp == "qtheat")
+      {
+        basis = new QTHeatBasis<D> (order, coeffA);
+      }
+    else if (eqtyp == "wave" || eqtyp == "qtwave" || eqtyp == "fowave_reduced")
+      {
+        basismat = TWaveBasis<D>::Basis (order, basistype,
+                                         eqtyp == "fowave_reduced");
+        basis = new QTWaveBasis<D> (order, coeffA, coeffB);
+      }
+    else if (eqtyp == "helmholtz" || eqtyp == "helmholtzconj")
+      {
+      }
+    else
+      throw Exception ("TrefftzFESpace::UpdateBasis: unknown eqtyp");
+  }
   void TrefftzFESpace ::UpdateBasis ()
   {
     string eqtyp = this->eqtyp;
     switch (D)
       {
       case 2:
-        {
-          if (eqtyp == "laplace")
-            basismat = TLapBasis<2>::Basis (order, basistype);
-          else if (eqtyp == "qtelliptic")
-            {
-              basis = new QTEllipticBasis<2> (order, coeffA, coeffB, coeffC);
-            }
-          else if (eqtyp == "fowave" || eqtyp == "foqtwave")
-            {
-              basismats.SetSize (D);
-              for (int d = 0; d < D; d++)
-                basismats[d] = FOTWaveBasis<2>::Basis (order, d);
-              basis = new FOQTWaveBasis<2> (order, coeffA, coeffB);
-            }
-          else if (eqtyp == "heat")
-            {
-              basismat = THeatBasis<2>::Basis (order, 0, 0);
-            }
-          else if (eqtyp == "qtheat")
-            {
-              basis = new QTHeatBasis<2> (order, coeffA);
-            }
-          else if (eqtyp == "wave" || eqtyp == "qtwave"
-                   || eqtyp == "fowave_reduced")
-            {
-              basismat = TWaveBasis<2>::Basis (order, basistype,
-                                               eqtyp == "fowave_reduced");
-              basis = new QTWaveBasis<2> (order, coeffA, coeffB);
-            }
-          else if (eqtyp == "helmholtz" || eqtyp == "helmholtzconj")
-            {
-            }
-          else
-            throw Exception ("TrefftzFESpace::UpdateBasis: unknown eqtyp");
-          break;
-        }
+        UpdateBasisConstDim<2> ();
+        break;
       case 3:
-        {
-          if (eqtyp == "laplace")
-            basismat = TLapBasis<3>::Basis (order, basistype);
-          else if (eqtyp == "qtelliptic")
-            {
-              basis = new QTEllipticBasis<3> (order, coeffA, coeffB, coeffC);
-            }
-          else if (eqtyp == "fowave" || eqtyp == "foqtwave")
-            {
-              basismats.SetSize (D);
-              for (int d = 0; d < D; d++)
-                basismats[d] = FOTWaveBasis<3>::Basis (order, d);
-              basis = new FOQTWaveBasis<3> (order, coeffA, coeffB);
-            }
-          else if (eqtyp == "heat")
-            {
-              basismat = THeatBasis<3>::Basis (order, 0, 0);
-            }
-          else if (eqtyp == "qtheat")
-            {
-              basis = new QTHeatBasis<3> (order, coeffA);
-            }
-          else if (eqtyp == "wave" || eqtyp == "qtwave"
-                   || eqtyp == "fowave_reduced")
-            {
-              basismat = TWaveBasis<3>::Basis (order, basistype,
-                                               eqtyp == "fowave_reduced");
-              basis = new QTWaveBasis<3> (order, coeffA, coeffB);
-            }
-          else
-            throw Exception ("TrefftzFESpace::UpdateBasis: unknown eqtyp");
-          break;
-        }
+        UpdateBasisConstDim<3> ();
+        break;
+      default:
+        throw Exception (
+            "TrefftzFESpace::UpdateBasis: unsupported dimension D");
       }
   }
 
