@@ -2,6 +2,11 @@
 
 # ignore the build folder
 make
+# local build commands
+compile_commands.json
+
+# cache folder (e.g. of clangd)
+.cache
 
 # Github C++ gitignore template: https://github.com/github/gitignore/blob/main/C%2B%2B.gitignore
 # Prerequisites
