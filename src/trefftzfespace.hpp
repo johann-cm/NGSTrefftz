@@ -103,6 +103,22 @@ namespace ngcomp
     // 0);
   };
 
+  // denotes the type of an equation
+  enum class EqType
+  {
+    fowave,
+    foqtwave,
+    wave,
+    fowave_reduced,
+    heat,
+    qtheat,
+    laplace,
+    qtelliptic,
+    helmholtz,
+    helmholtzconj,
+    unknown
+  };
+
   class TrefftzFESpace : public FESpace
   {
     int D;
@@ -110,6 +126,7 @@ namespace ngcomp
     int local_ndof;
     double coeff_const = 1;
     string eqtyp = "wave";
+    EqType eqtype = EqType::wave;
     int useshift = 1;
     int usescale = 1;
     int basistype = 0;
