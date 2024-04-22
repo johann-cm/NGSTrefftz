@@ -420,6 +420,7 @@ namespace ngcomp
                   }
                 }
             }
+            break;
           case ET_HEX:
           case ET_PRISM:
           case ET_PYRAMID:
@@ -486,21 +487,21 @@ namespace ngcomp
                         scale));
                   }
                 }
-              break;
             }
+            break;
           }
-        // else
-        try
-          {
-            return SwitchET<ET_POINT, ET_SEGM, ET_TRIG, ET_QUAD> (
-                eltype, [&alloc] (auto et) -> FiniteElement & {
-                  return *new (alloc) DummyFE<et.ElementType ()>;
-                });
-          }
-        catch (Exception &e)
-          {
-            throw Exception ("illegal element type in Trefftz::GetSurfaceFE");
-          }
+      }
+    // else
+    try
+      {
+        return SwitchET<ET_POINT, ET_SEGM, ET_TRIG, ET_QUAD> (
+            eltype, [&alloc] (auto et) -> FiniteElement & {
+              return *new (alloc) DummyFE<et.ElementType ()>;
+            });
+      }
+    catch (Exception &e)
+      {
+        throw Exception ("illegal element type in Trefftz::GetSurfaceFE");
       }
   }
 
